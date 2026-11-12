@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, text } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, text, pgEnum } from "drizzle-orm/pg-core";
 
 export const playerRoleEnum = pgEnum("player_role", ["leader", "co_leader", "elder", "member"]);
 
