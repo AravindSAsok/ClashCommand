@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, text, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, text, numeric, pgEnum } from "drizzle-orm/pg-core";
 import { clans } from "./clans";
 import { cwlSeasons } from "./cwlSeasons";
 
@@ -8,12 +8,8 @@ export const warResultEnum = pgEnum("war_result", ["win", "loss", "draw"]);
 
 export const wars = pgTable("wars", {
   id: uuid("id").primaryKey().defaultRandom(),
-  clanId: uuid("clan_id")
-    .notNull()
-    .references(() => clans.id, { onDelete: "restrict" }),
-  cwlSeasonId: uuid("cwl_season_id").references(() => cwlSeasons.id, {
-    onDelete: "set null",
-  }),
+  clanId: uuid("clan_id").notNull().references(() => clans.id, { onDelete: "restrict" }),
+  cwlSeasonId: uuid("cwl_season_id").references(() => cwlSeasons.id, { onDelete: "set null" }),
   opponentName: varchar("opponent_name", { length: 255 }).notNull(),
   opponentTag: varchar("opponent_tag", { length: 20 }),
   warType: warTypeEnum("war_type").notNull().default("normal"),
