@@ -32,7 +32,7 @@ export type CocClan = {
   members?: number; points?: number; requiredTrophies?: number;
 };
 export type CocMember = {
-  tag: string; name: string; role: string; expLevel: number; trophies: number;
+  tag: string; name: string; role: string; expLevel: number; trophies: number; townHallLevel?: number;
   donations: number; donationsReceived: number; clanRank?: number; league?: { name: string };
   builderBaseTrophies?: number;
 };
