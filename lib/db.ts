@@ -1,31 +1,19 @@
-import { NeonDatabase, neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "../db/schema";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _db: ReturnType<typeof drizzle> | undefined;
-}
+const globalForDb = globalThis as unknown as { pool?: Pool };
 
-export function getDb() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL environment variable is not set. See .env.example",
-    );
-  }
+const pool =
+  globalForDb.pool ??
+  new Pool({
+    // The fallback lets Next.js build without a local database. Database
+    // queries still require DATABASE_URL to point to a running PostgreSQL DB.
+    connectionString:
+      process.env.DATABASE_URL ??
+      "postgresql://postgres:postgres@localhost:5432/clash_command",
+  });
 
-  if (process.env.NODE_ENV === "development" && globalThis._db) {
-    return globalThis._db;
-  }
+if (process.env.NODE_ENV !== "production") globalForDb.pool = pool;
 
-  const client = neon(process.env.DATABASE_URL);
-  const db = drizzle(client, { schema });
-
-  if (process.env.NODE_ENV === "development") {
-    globalThis._db = db;
-  }
-
-  return db;
-}
-
-export const db = getDb();
+export const db = drizzle(pool, { schema });
