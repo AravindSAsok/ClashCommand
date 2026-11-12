@@ -25,9 +25,8 @@ export function ClanWars({ clanId }: { clanId: string }) {
     setError("");
     try {
       // Save the live war snapshot before displaying it, so player profiles build history over time.
-      const syncResponse = await fetch(`/api/clans/${clanId}/wars/sync`, { method: "POST" });
-      const syncResult = await syncResponse.json();
-      if (!syncResponse.ok) throw new Error(syncResult.error || "Could not sync current war");
+      // Sync is best-effort: a private/unavailable current war must not hide the public clan war log.
+      await fetch(`/api/clans/${clanId}/wars/sync`, { method: "POST" }).catch(() => null);
       const response = await fetch(`/api/clans/${clanId}/wars`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load wars");
