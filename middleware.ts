@@ -1,25 +1,16 @@
 import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
 
 export default withAuth({
   callbacks: {
     authorized: ({ token, req }) => {
       const { pathname } = req.nextUrl;
-
-      // Allow auth routes
-      if (pathname.startsWith("/api/auth") || pathname.startsWith("/(auth)")) {
-        return true;
-      }
-
-      // Require valid token for all other routes
-      return !!token;
+      if (pathname === "/login" || pathname.startsWith("/api/auth/")) return true;
+      return Boolean(token);
     },
   },
-  pages: {
-    signIn: "/(auth)/login",
-  },
+  pages: { signIn: "/login" },
 });
 
 export const config = {
-  matcher: ["/((?!api/_next|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico)$).*)"],
 };
