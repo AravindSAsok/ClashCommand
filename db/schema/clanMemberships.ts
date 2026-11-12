@@ -1,18 +1,13 @@
-import { pgTable, uuid, varchar, timestamp, integer, text } from "drizzle-orm/pg-core";
-import { players } from "./players";
+import { pgTable, uuid, varchar, timestamp, integer, text, pgEnum } from "drizzle-orm/pg-core";
+import { players, playerRoleEnum } from "./players";
 import { clans } from "./clans";
-import { playerRoleEnum } from "./players";
 
 export const membershipStatusEnum = pgEnum("membership_status", ["active", "inactive", "archived"]);
 
 export const clanMemberships = pgTable("clan_memberships", {
   id: uuid("id").primaryKey().defaultRandom(),
-  playerId: uuid("player_id")
-    .notNull()
-    .references(() => players.id, { onDelete: "restrict" }),
-  clanId: uuid("clan_id")
-    .notNull()
-    .references(() => clans.id, { onDelete: "restrict" }),
+  playerId: uuid("player_id").notNull().references(() => players.id, { onDelete: "restrict" }),
+  clanId: uuid("clan_id").notNull().references(() => clans.id, { onDelete: "restrict" }),
   joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
   leftAt: timestamp("left_at", { withTimezone: true }),
   role: playerRoleEnum("role").notNull().default("member"),
