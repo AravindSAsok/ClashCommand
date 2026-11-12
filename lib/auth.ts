@@ -11,45 +11,58 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const { db } = await import("./db");
         const { users } = await import("../db/schema");
         const { eq } = await import("drizzle-orm");
 
-        const user = await db
+        let [user] = await db
           .select()
           .from(users)
           .where(eq(users.email, credentials.email))
           .limit(1);
 
-        if (!user[0] || !user[0].passwordHash) {
-          throw new Error("Invalid credentials");
+        // Bootstrap the first admin only when the submitted credentials exactly
+        // match the private values configured in the server environment.
+        if (
+          !user &&
+          process.env.ADMIN_EMAIL &&
+          process.env.ADMIN_PASSWORD &&
+          credentials.email === process.env.ADMIN_EMAIL &&
+          credentials.password === process.env.ADMIN_PASSWORD
+        ) {
+          const passwordHash = await bcrypt.hash(credentials.password, 12);
+          await db
+            .insert(users)
+            .values({
+              email: credentials.email,
+              name: "Administrator",
+              passwordHash,
+            })
+            .onConflictDoNothing();
+
+          [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, credentials.email))
+            .limit(1);
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user[0].passwordHash,
-        );
-
-        if (!isValid) {
-          throw new Error("Invalid credentials");
-        }
+        if (!user?.passwordHash) return null;
+        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+        if (!isValid) return null;
 
         return {
-          id: user[0].id,
-          email: user[0].email,
-          name: user[0].name,
-          role: user[0].role,
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
         };
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -66,10 +79,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  pages: {
-    signIn: "/(auth)/login",
-    error: "/(auth)/login",
-  },
+  pages: { signIn: "/login", error: "/login" },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
