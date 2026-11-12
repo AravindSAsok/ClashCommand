@@ -1,13 +1,11 @@
-import { pgTable, uuid, varchar, timestamp, text } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, pgEnum } from "drizzle-orm/pg-core";
 import { clans } from "./clans";
 
 export const cwlSeasonStatusEnum = pgEnum("cwl_season_status", ["upcoming", "active", "completed"]);
 
 export const cwlSeasons = pgTable("cwl_seasons", {
   id: uuid("id").primaryKey().defaultRandom(),
-  clanId: uuid("clan_id")
-    .notNull()
-    .references(() => clans.id, { onDelete: "restrict" }),
+  clanId: uuid("clan_id").notNull().references(() => clans.id, { onDelete: "restrict" }),
   seasonTag: varchar("season_tag", { length: 50 }),
   name: varchar("name", { length: 255 }).notNull(),
   startAt: timestamp("start_at", { withTimezone: true }).notNull(),
