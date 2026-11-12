@@ -1,0 +1,1 @@
+// Test setup - vitest expect is imported directly in test files

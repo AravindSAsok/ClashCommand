@@ -1,0 +1,21 @@
+"use client";
+
+import * as React from "react";
+import {
+  ToastProvider,
+  ToastViewport,
+} from "@/components/ui/toast";
+
+export function Toaster() {
+  return (
+    <ToastProvider>
+      <ToastViewport />
+    </ToastProvider>
+  );
+}
+
+export type ToastProps = {
+  title?: string;
+  description?: string;
+  action?: React.ReactNode;
+};

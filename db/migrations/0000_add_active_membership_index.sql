@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "one_active_membership_per_player" ON clan_memberships (playerId) WHERE status = 'active' AND leftAt IS NULL;
