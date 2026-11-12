@@ -19,40 +19,20 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        toast({
-          title: "Login failed",
-          description: result.error,
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      toast({
-        title: "Login failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+    const result = await signIn("credentials", { email, password, redirect: false });
+    if (result?.error) {
+      toast({ title: "Login failed", description: "Check your email and password.", variant: "destructive" });
       setLoading(false);
+      return;
     }
+    router.push("/");
+    router.refresh();
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-below:0">
+        <CardHeader>
           <CardTitle className="text-2xl font-bold">Clash Command</CardTitle>
           <CardDescription>Sign in to manage your clan analytics</CardDescription>
         </CardHeader>
@@ -60,36 +40,18 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@clashcommand.local"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2 pt-6">
-          <p className="text-sm text-muted-foreground text-center">
-            Default admin: admin@clashcommand.local / ChangeMe!2345
-          </p>
-        </CardFooter>
+        <CardFooter />
       </Card>
     </div>
   );
