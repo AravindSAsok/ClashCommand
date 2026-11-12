@@ -18,7 +18,7 @@ export function SideNav() {
     <aside className="w-64 border-r border-border bg-secondary/50 flex-shrink-0 hidden md:flex flex-col">
       <div className="flex items-center gap-2 p-6">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <ShieldAlert className="w-5 h-5 text-primary-foreground" />
+          <ShieldAlert className="w-5 h-5 text-primary-foreground" suppressHydrationWarning />
         </div>
         <span className="font-bold text-lg tracking-tight">Clash Command</span>
       </div>
@@ -28,7 +28,7 @@ export function SideNav() {
           const isActive = pathname === item.href;
           return (
             <Link key={item.name} href={item.href} className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5" suppressHydrationWarning />
               {item.name}
               {isActive && <ArrowRight className="ml-auto h-4 w-4" />}
             </Link>

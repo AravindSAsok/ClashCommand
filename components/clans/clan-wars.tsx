@@ -24,6 +24,10 @@ export function ClanWars({ clanId }: { clanId: string }) {
     setLoading(true);
     setError("");
     try {
+      // Save the live war snapshot before displaying it, so player profiles build history over time.
+      const syncResponse = await fetch(`/api/clans/${clanId}/wars/sync`, { method: "POST" });
+      const syncResult = await syncResponse.json();
+      if (!syncResponse.ok) throw new Error(syncResult.error || "Could not sync current war");
       const response = await fetch(`/api/clans/${clanId}/wars`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load wars");
@@ -91,7 +95,7 @@ export function ClanWars({ clanId }: { clanId: string }) {
               })}
             </div>
           )}
-          <p className="mt-3 text-xs text-muted-foreground">The official war log provides clan-level results only. Individual member attacks are available for the current war; past member-level attacks require collecting war snapshots while each war is active.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Player attack history is saved from live wars as they happen. Older clan war-log entries do not contain individual attack data.</p>
         </CardContent>
       </Card>
     </div>
