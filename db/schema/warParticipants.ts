@@ -1,15 +1,11 @@
-import { pgTable, uuid, varchar, timestamp, integer, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, numeric, text } from "drizzle-orm/pg-core";
 import { wars } from "./wars";
 import { players } from "./players";
 
 export const warParticipants = pgTable("war_participants", {
   id: uuid("id").primaryKey().defaultRandom(),
-  warId: uuid("war_id")
-    .notNull()
-    .references(() => wars.id, { onDelete: "cascade" }),
-  playerId: uuid("player_id")
-    .notNull()
-    .references(() => players.id, { onDelete: "restrict" }),
+  warId: uuid("war_id").notNull().references(() => wars.id, { onDelete: "cascade" }),
+  playerId: uuid("player_id").notNull().references(() => players.id, { onDelete: "restrict" }),
   attacksUsed: integer("attacks_used").notNull().default(0),
   starsEarned: integer("stars_earned").notNull().default(0),
   destructionTotal: numeric("destruction_total", { precision: 5, scale: 2 }).notNull().default("0.00"),
