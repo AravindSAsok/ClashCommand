@@ -1,34 +1,25 @@
 import type { Metadata } from "next";
-import { Session } from "next-auth";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
 import { SideNav } from "@/components/layout/side-nav";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Clash Command",
-  description: "Clash of Clans clan management & war analytics platform",
+  description: "Clash of Clans clan management and war tracking",
 };
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const session = await getSession();
-
-  if (!session) {
-    redirect("/(auth)/login");
-  }
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <Toaster />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         <SideNav />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
-        </div>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );
