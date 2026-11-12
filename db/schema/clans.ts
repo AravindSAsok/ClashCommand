@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, integer, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const clanWarLeagueEnum = pgEnum("clan_war_league", [
