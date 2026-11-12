@@ -40,10 +40,11 @@ export default async function ClanDetailsPage({ params }: PageProps) {
         <CardHeader><CardTitle>Clan members</CardTitle></CardHeader>
         <CardContent>
           {members.length === 0 ? <p className="text-sm text-muted-foreground">No members imported yet. Return to Clans and refresh the clan.</p> : (
-            <Table><TableHeader><TableRow><TableHead>Player</TableHead><TableHead>Player tag</TableHead><TableHead>Role</TableHead></TableRow></TableHeader>
+            <Table><TableHeader><TableRow><TableHead>Player</TableHead><TableHead>Player tag</TableHead><TableHead>Town Hall</TableHead><TableHead>Role</TableHead></TableRow></TableHeader>
               <TableBody>{members.map((member) => <TableRow key={member.id}>
                 <TableCell className="font-medium">{member.name}</TableCell>
                 <TableCell className="font-mono text-xs">#{member.playerTag}</TableCell>
+                <TableCell>TH {member.townHallLevel}</TableCell>
                 <TableCell className="capitalize">{member.role.replace("_", " ")}</TableCell>
               </TableRow>)}</TableBody>
             </Table>
