@@ -41,8 +41,8 @@ export async function POST(_req: Request, { params }: RouteContext) {
 
     const ours = currentWar.clan || {};
     const theirs = currentWar.opponent || {};
-    const status = currentWar.state === "preparation" ? "preparation" : currentWar.state === "warEnded" ? "ended" : "active";
-    const result = status !== "ended" ? null : (Number(ours.stars || 0) > Number(theirs.stars || 0) ? "win" : Number(ours.stars || 0) < Number(theirs.stars || 0) ? "loss" : Number(ours.destructionPercentage || 0) > Number(theirs.destructionPercentage || 0) ? "win" : Number(ours.destructionPercentage || 0) < Number(theirs.destructionPercentage || 0) ? "loss" : "draw");
+    const status: "preparation" | "active" | "ended" = currentWar.state === "preparation" ? "preparation" : currentWar.state === "warEnded" ? "ended" : "active";
+    const result: "win" | "loss" | "draw" | null = status !== "ended" ? null : (Number(ours.stars || 0) > Number(theirs.stars || 0) ? "win" : Number(ours.stars || 0) < Number(theirs.stars || 0) ? "loss" : Number(ours.destructionPercentage || 0) > Number(theirs.destructionPercentage || 0) ? "win" : Number(ours.destructionPercentage || 0) < Number(theirs.destructionPercentage || 0) ? "loss" : "draw");
 
     let savedWarId = existingWar?.id;
     const warValues = {
