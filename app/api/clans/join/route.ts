@@ -7,57 +7,37 @@ import { eq, and, isNull } from "drizzle-orm";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const { playerId, role } = await req.json();
+    const { playerId, clanId, role } = await req.json();
+    if (!playerId || !clanId) {
+      return NextResponse.json({ error: "Player ID and clan ID are required" }, { status: 400 });
+    }
 
-    // Check player has no active membership
-    const existingActive = await db
-      .select()
-      .from(clanMemberships)
-      .where(
-        and(
-          eq(clanMemberships.playerId, playerId),
-          eq(clanMemberships.status, "active"),
-          isNull(clanMemberships.leftAt, sql`NULL`)
-        )
-      )
-      .limit(1);
-
+    const existingActive = await db.select().from(clanMemberships).where(and(
+      eq(clanMemberships.playerId, playerId),
+      eq(clanMemberships.status, "active"),
+      isNull(clanMemberships.leftAt),
+    )).limit(1);
     if (existingActive.length > 0) {
-      return NextResponse.json(
-        { error: "Player already has an active clan membership" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Player already has an active clan membership" }, { status: 400 });
     }
 
-    // Get the player to verify they exist
-    const [p] = await db
-      .select()
-      .from(players)
-      .where(eq(players.id, playerId))
-      .limit(1);
+    const [player] = await db.select().from(players).where(eq(players.id, playerId)).limit(1);
+    if (!player) return NextResponse.json({ error: "Player not found" }, { status: 404 });
 
-    if (!p) {
-      return NextResponse.json({ error: "Player not found" }, { status: 404 });
-    }
+    const [clan] = await db.select().from(clans).where(eq(clans.id, clanId)).limit(1);
+    if (!clan) return NextResponse.json({ error: "Clan not found" }, { status: 404 });
 
-    // Create new membership
-    const [newMembership] = await db
-      .insert(clanMemberships)
-      .values({
-        playerId,
-        role: role || "member",
-        status: "active",
-        joinedAt: sql`NOW()`,
-      })
-      .returning();
-
+    const [newMembership] = await db.insert(clanMemberships).values({
+      playerId,
+      clanId,
+      role: role || "member",
+      status: "active",
+      joinedAt: new Date(),
+    }).returning();
     return NextResponse.json(newMembership, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: "Failed to join clan: " + error.message }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to join clan" }, { status: 400 });
   }
 }
