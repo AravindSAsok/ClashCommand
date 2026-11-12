@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       const [savedPlayer] = await db.insert(players).values({
         playerTag,
         name: member.name,
-        townHallLevel: 1,
+        townHallLevel: member.townHallLevel || 1,
         role: member.role === "leader" ? "leader" : member.role === "coLeader" ? "co_leader" : member.role === "admin" ? "elder" : "member",
       }).onConflictDoUpdate({
         target: players.playerTag,
