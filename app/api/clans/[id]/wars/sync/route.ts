@@ -19,6 +19,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role !== "admin") return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Run npm run sync:clans on the local admin computer. The deployed site only reads saved data." }, { status: 403 });
 
   try {
     const { id } = await params;
