@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Toaster />
       <div className="flex flex-1 overflow-hidden">
         <SideNav />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">{children}</main>
       </div>
     </div>
   );
