@@ -9,6 +9,7 @@ import { clashApi, normalizeClanTag, type CocClan, type CocMember } from "@/lib/
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Admin access required" }, { status: 403 });
 
   try {
     const body = await req.json();
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
         target: players.playerTag,
         set: {
           name: member.name,
+          townHallLevel: member.townHallLevel || 1,
           role: member.role === "leader" ? "leader" : member.role === "coLeader" ? "co_leader" : member.role === "admin" ? "elder" : "member",
           updatedAt: new Date(),
         },
