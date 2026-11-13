@@ -15,8 +15,10 @@ export default function ClansPage() {
   const [tag, setTag] = useState("");
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const canImport = isAdmin && process.env.NODE_ENV !== "production";
 
   async function loadClans() {
     setListLoading(true);
@@ -32,7 +34,12 @@ export default function ClansPage() {
     }
   }
 
-  useEffect(() => { void loadClans(); }, []);
+  useEffect(() => {
+    void loadClans();
+    fetch("/api/auth/session").then((response) => response.json())
+      .then((session) => setIsAdmin(session?.user?.role === "admin"))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   async function addClan(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,24 +69,25 @@ export default function ClansPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Clans</h1>
-        <p className="text-muted-foreground">Add a clan tag to import its current roster and view war activity.</p>
+        <p className="text-muted-foreground">Browse the clans and their saved member and war data.</p>
       </div>
-      <Card>
+      {canImport && <Card>
         <CardHeader><CardTitle>Add a clan</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={addClan} className="flex flex-col gap-3 sm:flex-row">
             <Input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="Clan tag, e.g. #2PP" required className="sm:max-w-sm" />
             <Button type="submit" disabled={loading}>{loading ? "Importing clan..." : "Add clan"}</Button>
           </form>
-          <p className="mt-2 text-xs text-muted-foreground">The clan profile and up to 50 current members are imported from the official Clash of Clans API.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Add clans from the local admin app. The deployed site only displays saved Neon data.</p>
           {message && <p className="mt-3 text-sm text-green-600">{message}</p>}
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </CardContent>
-      </Card>
+      </Card>}
+      {error && !canImport && <p className="text-sm text-destructive">{error}</p>}
       <div className="space-y-3">
-        <h2 className="text-xl font-semibold">Your clans</h2>
+        <h2 className="text-xl font-semibold">Saved clans</h2>
         {listLoading ? <p className="text-sm text-muted-foreground">Loading clans...</p> : clans.length === 0 ? (
-          <Card><CardHeader><CardTitle>No clans added yet</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">Enter your clan tag above to get started.</CardContent></Card>
+          <Card><CardHeader><CardTitle>No clans added yet</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">The administrator has not added any clans yet.</CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {clans.map((clan) => (

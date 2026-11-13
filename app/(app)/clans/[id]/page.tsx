@@ -1,16 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq, and, isNull } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clans, clanMemberships, players } from "@/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClanWars } from "@/components/clans/clan-wars";
+import { RemoveClanMemberButton } from "@/components/clans/remove-clan-member-button";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ClanDetailsPage({ params }: PageProps) {
   const { id } = await params;
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user.role === "admin";
   const [clan] = await db.select().from(clans).where(eq(clans.id, id)).limit(1);
   if (!clan) notFound();
 
@@ -39,13 +44,14 @@ export default async function ClanDetailsPage({ params }: PageProps) {
       <Card>
         <CardHeader><CardTitle>Clan members</CardTitle></CardHeader>
         <CardContent>
-          {members.length === 0 ? <p className="text-sm text-muted-foreground">No members imported yet. Return to Clans and refresh the clan.</p> : (
-            <Table><TableHeader><TableRow><TableHead>Player</TableHead><TableHead>Player tag</TableHead><TableHead>Town Hall</TableHead><TableHead>Role</TableHead></TableRow></TableHeader>
+          {members.length === 0 ? <p className="text-sm text-muted-foreground">No members imported yet.</p> : (
+            <Table><TableHeader><TableRow><TableHead>Player</TableHead><TableHead>Player tag</TableHead><TableHead>Town Hall</TableHead><TableHead>Role</TableHead>{isAdmin && <TableHead>Admin</TableHead>}</TableRow></TableHeader>
               <TableBody>{members.map((member) => <TableRow key={member.id}>
                 <TableCell className="font-medium"><Link className="hover:underline text-primary" href={`/members/${member.id}`}>{member.name}</Link></TableCell>
                 <TableCell className="font-mono text-xs">#{member.playerTag}</TableCell>
                 <TableCell>TH {member.townHallLevel}</TableCell>
                 <TableCell className="capitalize">{member.role.replace("_", " ")}</TableCell>
+                {isAdmin && <TableCell><RemoveClanMemberButton clanId={clan.id} playerId={member.id} playerName={member.name} /></TableCell>}
               </TableRow>)}</TableBody>
             </Table>
           )}

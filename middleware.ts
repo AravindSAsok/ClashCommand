@@ -4,8 +4,23 @@ export default withAuth({
   callbacks: {
     authorized: ({ token, req }) => {
       const { pathname } = req.nextUrl;
-      if (pathname === "/login" || pathname.startsWith("/api/auth/")) return true;
-      return Boolean(token);
+      if (
+        pathname === "/login" ||
+        pathname === "/register" ||
+        pathname.startsWith("/api/auth/")
+      ) return true;
+
+      if (!token) return false;
+
+      // Viewer accounts may read data but cannot call any write API.
+      if (
+        pathname.startsWith("/api/") &&
+        !["GET", "HEAD", "OPTIONS"].includes(req.method)
+      ) {
+        return token.role === "admin";
+      }
+
+      return true;
     },
   },
   pages: { signIn: "/login" },

@@ -17,36 +17,26 @@ export const authOptions: NextAuthOptions = {
         const { users } = await import("../db/schema");
         const { eq } = await import("drizzle-orm");
 
-        let [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, credentials.email))
-          .limit(1);
+        const email = credentials.email.trim().toLowerCase();
+        let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-        // Bootstrap the first admin only when the submitted credentials exactly
-        // match the private values configured in the server environment.
+        // Bootstrap the first admin only when credentials match private server environment values.
         if (
           !user &&
           process.env.ADMIN_EMAIL &&
           process.env.ADMIN_PASSWORD &&
-          credentials.email === process.env.ADMIN_EMAIL &&
+          email === process.env.ADMIN_EMAIL.trim().toLowerCase() &&
           credentials.password === process.env.ADMIN_PASSWORD
         ) {
           const passwordHash = await bcrypt.hash(credentials.password, 12);
-          await db
-            .insert(users)
-            .values({
-              email: credentials.email,
-              name: "Administrator",
-              passwordHash,
-            })
-            .onConflictDoNothing();
+          await db.insert(users).values({
+            email,
+            name: "Administrator",
+            passwordHash,
+            role: "admin",
+          }).onConflictDoNothing();
 
-          [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, credentials.email))
-            .limit(1);
+          [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
         }
 
         if (!user?.passwordHash) return null;

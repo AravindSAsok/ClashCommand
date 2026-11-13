@@ -24,6 +24,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
 export async function PUT(req: Request, { params }: RouteContext) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   try {
     const { id } = await params;
     const validated = clanSchema.parse(await req.json());
@@ -44,6 +45,7 @@ export async function PUT(req: Request, { params }: RouteContext) {
 export async function DELETE(_req: Request, { params }: RouteContext) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   try {
     const { id } = await params;
     const [updatedClan] = await db.update(clans)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clans, players, wars, warParticipants, warAttacks } from "@/db/schema";
@@ -10,7 +10,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 function parseCocDate(value?: string) {
   if (!value) return new Date();
-  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.\d+)?Z$/);
   if (!match) return new Date(value);
   return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]), Number(match[6])));
 }
@@ -18,6 +18,8 @@ function parseCocDate(value?: string) {
 export async function POST(_req: Request, { params }: RouteContext) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Run npm run sync:clans on the local admin computer. The deployed site only reads saved data." }, { status: 403 });
 
   try {
     const { id } = await params;
@@ -35,7 +37,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
     const opponentTag = normalizeClanTag(opponent.tag || "");
     const [existingWar] = await db.select().from(wars).where(and(
       eq(wars.clanId, clan.id),
-      eq(wars.opponentTag, opponentTag),
+      opponentTag ? eq(wars.opponentTag, opponentTag) : isNull(wars.opponentTag),
       eq(wars.startAt, startAt),
     )).limit(1);
 
@@ -44,7 +46,6 @@ export async function POST(_req: Request, { params }: RouteContext) {
     const status: "preparation" | "active" | "ended" = currentWar.state === "preparation" ? "preparation" : currentWar.state === "warEnded" ? "ended" : "active";
     const result: "win" | "loss" | "draw" | null = status !== "ended" ? null : (Number(ours.stars || 0) > Number(theirs.stars || 0) ? "win" : Number(ours.stars || 0) < Number(theirs.stars || 0) ? "loss" : Number(ours.destructionPercentage || 0) > Number(theirs.destructionPercentage || 0) ? "win" : Number(ours.destructionPercentage || 0) < Number(theirs.destructionPercentage || 0) ? "loss" : "draw");
 
-    let savedWarId = existingWar?.id;
     const warValues = {
       opponentName: opponent.name || "Unknown clan",
       opponentTag: opponentTag || null,
@@ -60,6 +61,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
       updatedAt: new Date(),
     };
 
+    let savedWarId = existingWar?.id;
     if (existingWar) {
       await db.update(wars).set(warValues).where(eq(wars.id, existingWar.id));
     } else {
@@ -73,9 +75,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
     }
 
     const opponentPositions = new Map<string, number>();
-    for (const member of theirs.members || []) {
-      opponentPositions.set(normalizeClanTag(member.tag), Number(member.mapPosition || 0));
-    }
+    for (const member of theirs.members || []) opponentPositions.set(normalizeClanTag(member.tag), Number(member.mapPosition || 0));
 
     let savedAttackCount = 0;
     for (const member of ours.members || []) {
@@ -126,11 +126,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
         if (existingAttack) {
           await db.update(warAttacks).set(attackValues).where(eq(warAttacks.id, existingAttack.id));
         } else {
-          await db.insert(warAttacks).values({
-            warId: savedWarId!,
-            participantId: participantId!,
-            ...attackValues,
-          });
+          await db.insert(warAttacks).values({ warId: savedWarId!, participantId: participantId!, ...attackValues });
         }
         savedAttackCount++;
       }

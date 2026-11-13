@@ -24,15 +24,13 @@ export function ClanWars({ clanId }: { clanId: string }) {
     setLoading(true);
     setError("");
     try {
-      // Save the live war snapshot before displaying it, so player profiles build history over time.
-      // Sync is best-effort: a private/unavailable current war must not hide the public clan war log.
-      await fetch(`/api/clans/${clanId}/wars/sync`, { method: "POST" }).catch(() => null);
-      const response = await fetch(`/api/clans/${clanId}/wars`);
+      // The website only reads saved Neon data. Supercell syncing is done by the local admin script.
+      const response = await fetch(`/api/clans/${clanId}/wars`, { cache: "no-store" });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Could not load wars");
+      if (!response.ok) throw new Error(result.error || "Could not load saved wars");
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load wars");
+      setError(err instanceof Error ? err.message : "Could not load saved wars");
     } finally {
       setLoading(false);
     }
@@ -43,21 +41,21 @@ export function ClanWars({ clanId }: { clanId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">War activity</h2>
-        <Button variant="outline" size="sm" onClick={loadWars} disabled={loading}>{loading ? "Refreshing..." : "Refresh wars"}</Button>
+        <h2 className="text-xl font-semibold">Saved war activity</h2>
+        <Button variant="outline" size="sm" onClick={loadWars} disabled={loading}>{loading ? "Loading..." : "Refresh saved data"}</Button>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {loading && !data && <p className="text-sm text-muted-foreground">Loading war data...</p>}
+      {loading && !data && <p className="text-sm text-muted-foreground">Loading saved war data...</p>}
       {data?.currentWar && (
         <Card>
-          <CardHeader><CardTitle>Current war · {data.currentWar.state}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Latest war · {data.currentWar.state}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap justify-between gap-2 text-sm">
               <span>{data.currentWar.clan?.name} vs {data.currentWar.opponent?.name}</span>
               <span>{data.currentWar.clan?.stars ?? 0} - {data.currentWar.opponent?.stars ?? 0} stars</span>
             </div>
             <div className="space-y-2">
-              {(data.currentWar.clan?.members || []).slice().sort((a: any, b: any) => a.mapPosition - b.mapPosition).map((member: any) => (
+              {(data.currentWar.clan?.members || []).map((member: any) => (
                 <div key={member.tag} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-0">
                   <span>{member.name} <span className="text-muted-foreground">#{member.tag}</span></span>
                   <span>{(member.attacks || []).length} attacks · {(member.attacks || []).reduce((sum: number, attack: any) => sum + attack.stars, 0)} stars</span>
@@ -68,17 +66,15 @@ export function ClanWars({ clanId }: { clanId: string }) {
         </Card>
       )}
       <Card>
-        <CardHeader><CardTitle>Recent wars</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Saved wars</CardTitle></CardHeader>
         <CardContent>
-          {data?.warLogError && <p className="mb-3 text-sm text-muted-foreground">{data.warLogError}</p>}
           {!loading && data?.warLog.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No public war history was returned. The clan may have a private war log.</p>
+            <p className="text-sm text-muted-foreground">No wars have been saved yet. The administrator can run the local sync script during a war.</p>
           ) : (
             <div className="space-y-3">
               {data?.warLog.map((war: any, index: number) => {
                 const ours = war.clan || {};
                 const opponent = war.opponent || {};
-                const result = ours.result || "unknown";
                 return (
                   <div key={`${war.endTime || index}-${opponent.tag || index}`} className="flex flex-wrap items-center justify-between gap-3 border-b pb-3 text-sm last:border-0">
                     <div>
@@ -87,14 +83,14 @@ export function ClanWars({ clanId }: { clanId: string }) {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">{ours.stars ?? 0} - {opponent.stars ?? 0} stars</p>
-                      <p className="text-xs capitalize text-muted-foreground">{result} · {ours.destructionPercentage ?? 0}% destruction</p>
+                      <p className="text-xs capitalize text-muted-foreground">{ours.result || "in progress"} · {ours.destructionPercentage ?? 0}% destruction</p>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
-          <p className="mt-3 text-xs text-muted-foreground">Player attack history is saved from live wars as they happen. Older clan war-log entries do not contain individual attack data.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Player attack history is saved by the local sync script. Supercell's public war log does not expose individual attacks for older wars.</p>
         </CardContent>
       </Card>
     </div>

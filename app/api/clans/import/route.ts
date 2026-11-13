@@ -9,6 +9,10 @@ import { clashApi, normalizeClanTag, type CocClan, type CocMember } from "@/lib/
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Add clans from the local admin app. The deployed site only displays saved Neon data." }, { status: 403 });
+  }
 
   try {
     const body = await req.json();
@@ -29,7 +33,7 @@ export async function POST(req: Request) {
       clanLevel: clanData.clanLevel || 1,
       warLeague: "unranked",
       location: clanData.location?.name || null,
-      createdBy: (session.user as { id?: string }).id || null,
+      createdBy: session.user.id,
       isActive: true,
     }).onConflictDoUpdate({
       target: clans.tag,
@@ -45,16 +49,18 @@ export async function POST(req: Request) {
     const members = memberData.items || [];
     for (const member of members) {
       const playerTag = normalizeClanTag(member.tag);
+      const role = member.role === "leader" ? "leader" : member.role === "coLeader" ? "co_leader" : member.role === "admin" ? "elder" : "member";
       const [savedPlayer] = await db.insert(players).values({
         playerTag,
         name: member.name,
         townHallLevel: member.townHallLevel || 1,
-        role: member.role === "leader" ? "leader" : member.role === "coLeader" ? "co_leader" : member.role === "admin" ? "elder" : "member",
+        role,
       }).onConflictDoUpdate({
         target: players.playerTag,
         set: {
           name: member.name,
-          role: member.role === "leader" ? "leader" : member.role === "coLeader" ? "co_leader" : member.role === "admin" ? "elder" : "member",
+          townHallLevel: member.townHallLevel || 1,
+          role,
           updatedAt: new Date(),
         },
       }).returning();
@@ -67,10 +73,8 @@ export async function POST(req: Request) {
       )).limit(1);
 
       if (activeMembership) {
-        await db.update(clanMemberships).set({
-          role: savedPlayer.role,
-          updatedAt: new Date(),
-        }).where(eq(clanMemberships.id, activeMembership.id));
+        await db.update(clanMemberships).set({ role: savedPlayer.role, updatedAt: new Date() })
+          .where(eq(clanMemberships.id, activeMembership.id));
       } else {
         await db.insert(clanMemberships).values({
           playerId: savedPlayer.id,

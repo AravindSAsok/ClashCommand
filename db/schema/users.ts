@@ -1,13 +1,13 @@
-import { pgTable, uuid, varchar, timestamp, text, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, pgEnum } from "drizzle-orm/pg-core";
 
-export const userRoleEnum = pgEnum("user_role", ["admin"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "viewer"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
-  role: userRoleEnum("role").notNull().default("admin"),
+  role: userRoleEnum("role").notNull().default("viewer"),
   emailVerified: timestamp("email_verified", { withTimezone: true }),
   image: varchar("image", { length: 500 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
