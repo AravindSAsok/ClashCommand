@@ -265,12 +265,32 @@ async function main() {
 
     if (requestedTag) {
       result = await pool.query(
-        "SELECT id, name, tag FROM clans WHERE UPPER(REPLACE(tag, '#', ''))=$1 AND is_active=TRUE LIMIT 1",
+        "SELECT id, name, tag FROM clans WHERE UPPER(REPLACE(tag, '#', ''))=$1 LIMIT 1",
         [requestedTag],
       );
-      if (!result.rows.length) {
-        console.log(`Clan #${requestedTag} was not found as an active clan in Neon. Add or activate it first.`);
-        return;
+
+      if (result.rows.length) {
+        await pool.query(
+          "UPDATE clans SET is_active=TRUE, updated_at=NOW() WHERE id=$1",
+          [result.rows[0].id],
+        );
+      } else {
+        console.log(`Clan #${requestedTag} is not in Neon. Fetching it from Supercell and adding it...`);
+        const encodedTag = encodeURIComponent(`#${requestedTag}`);
+        const profile = await coc(`/clans/${encodedTag}`);
+        result = await pool.query(
+          `INSERT INTO clans (name, tag, clan_level, location, is_active)
+           VALUES ($1, $2, $3, $4, TRUE)
+           ON CONFLICT (tag) DO UPDATE SET
+             name=EXCLUDED.name,
+             clan_level=EXCLUDED.clan_level,
+             location=EXCLUDED.location,
+             is_active=TRUE,
+             updated_at=NOW()
+           RETURNING id, name, tag`,
+          [profile.name, requestedTag, profile.clanLevel || 1, profile.location?.name || null],
+        );
+        console.log(`Added clan: ${result.rows[0].name} (#${result.rows[0].tag})`);
       }
     } else {
       result = await pool.query(
