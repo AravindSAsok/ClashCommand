@@ -260,10 +260,26 @@ async function syncClan(clan) {
 
 async function main() {
   try {
-    const result = await pool.query("SELECT id, name, tag FROM clans WHERE is_active=TRUE ORDER BY created_at");
-    if (!result.rows.length) {
-      console.log("No active clans found in the database. Add clans first, then run this script.");
-      return;
+    const requestedTag = normalizeTag(process.argv[2] || "");
+    let result;
+
+    if (requestedTag) {
+      result = await pool.query(
+        "SELECT id, name, tag FROM clans WHERE UPPER(REPLACE(tag, '#', ''))=$1 AND is_active=TRUE LIMIT 1",
+        [requestedTag],
+      );
+      if (!result.rows.length) {
+        console.log(`Clan #${requestedTag} was not found as an active clan in Neon. Add or activate it first.`);
+        return;
+      }
+    } else {
+      result = await pool.query(
+        "SELECT id, name, tag FROM clans WHERE is_active=TRUE ORDER BY created_at",
+      );
+      if (!result.rows.length) {
+        console.log("No active clans found in the database. Add clans first, then run this script.");
+        return;
+      }
     }
 
     console.log(`Starting sync for ${result.rows.length} saved clan(s)...`);
