@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clans, players, wars, warParticipants, warAttacks } from "@/db/schema";
@@ -36,7 +36,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
     const opponentTag = normalizeClanTag(opponent.tag || "");
     const [existingWar] = await db.select().from(wars).where(and(
       eq(wars.clanId, clan.id),
-      eq(wars.opponentTag, opponentTag || null),
+      opponentTag ? eq(wars.opponentTag, opponentTag) : isNull(wars.opponentTag),
       eq(wars.startAt, startAt),
     )).limit(1);
 
