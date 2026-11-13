@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
@@ -34,7 +35,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Clash Command</CardTitle>
-          <CardDescription>Sign in to manage your clan analytics</CardDescription>
+          <CardDescription>Sign in to view clan analytics</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -51,7 +52,9 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter />
+        <CardFooter className="justify-center text-sm text-muted-foreground">
+          New to Clash Command? <Link href="/register" className="ml-1 text-primary hover:underline">Create an account</Link>
+        </CardFooter>
       </Card>
     </div>
   );
