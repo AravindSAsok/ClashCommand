@@ -18,6 +18,7 @@ export default function ClansPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const canImport = isAdmin && process.env.NODE_ENV !== "production";
 
   async function loadClans() {
     setListLoading(true);
@@ -70,19 +71,19 @@ export default function ClansPage() {
         <h1 className="text-3xl font-bold tracking-tight">Clans</h1>
         <p className="text-muted-foreground">Browse the clans and their saved member and war data.</p>
       </div>
-      {isAdmin && <Card>
+      {canImport && <Card>
         <CardHeader><CardTitle>Add a clan</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={addClan} className="flex flex-col gap-3 sm:flex-row">
             <Input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="Clan tag, e.g. #2PP" required className="sm:max-w-sm" />
             <Button type="submit" disabled={loading}>{loading ? "Importing clan..." : "Add clan"}</Button>
           </form>
-          <p className="mt-2 text-xs text-muted-foreground">Imports the clan and its current roster. Run the local sync script to refresh all saved clans and capture war attacks.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Add clans from the local admin app. The deployed site only displays saved Neon data.</p>
           {message && <p className="mt-3 text-sm text-green-600">{message}</p>}
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>}
-      {error && !isAdmin && <p className="text-sm text-destructive">{error}</p>}
+      {error && !canImport && <p className="text-sm text-destructive">{error}</p>}
       <div className="space-y-3">
         <h2 className="text-xl font-semibold">Saved clans</h2>
         {listLoading ? <p className="text-sm text-muted-foreground">Loading clans...</p> : clans.length === 0 ? (
