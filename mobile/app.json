@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "CoC Battle Assistant",
+    "slug": "coc-battle-assistant",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.aravindsasok.cocbattleassistant",
+      "versionCode": 1
+    }
+  }
+}
